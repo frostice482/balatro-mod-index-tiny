@@ -4,6 +4,8 @@ const fsp = require('fs/promises')
 const util = require('util')
 const zlib = require('zlib')
 
+process.chdir(__dirname)
+
 const cp_exec_prm = util.promisify(cp.exec)
 
 async function main() {

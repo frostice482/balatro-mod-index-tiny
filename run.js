@@ -65,6 +65,8 @@ async function handleJsonInfo(entry) {
 
     let obj, fmt
 
+    console.log('parsing', entry.name)
+
     if (isJson) {
         const data = await res.json()
         if (fieldTypeSatisfy(data, metaFieldTypes)) {
@@ -101,6 +103,8 @@ async function handleJsonInfo(entry) {
 }
 
 async function getJsonInfo(host, repo) {
+    if (repo.endsWith('.git')) repo = repo.slice(0, -4)
+
     let res
     if (host == "github.com") {
         res = await fetch(`https://api.github.com/repos/${repo}/contents`, {
@@ -126,26 +130,28 @@ async function handleItem(name) {
     const data = JSON.parse(content)
     data.pathname = name
 
+    console.log(name, data.repo)
+
     for (const prop of delprops) delete data[prop]
 
     const m = data.repo.match(/^https:\/\/([\w.]+)\/([\w.-]+\/[\w.-]+)/)
-    if (m) {
-        const meta = await getJsonInfo(m[1], m[2])
-        if (meta) {
-            switch (meta.format) {
-                case 'smods':
-                case 'smods-header':
-                    data.id = meta.obj.id
-                    data.version = meta.obj.version
-                    break
-                case 'thunderstore':
-                    data.id = meta.obj.name
-                    data.version = meta.obj.version_number
-                    break
-            }
-            //data.meta = meta.obj
-        }
+    if (!m) throw Error('Could not determine repo host from ' + data.repo)
+
+    const meta = await getJsonInfo(m[1], m[2])
+    if (!meta) throw Error('Could not determine meta info')
+
+    switch (meta.format) {
+        case 'smods':
+        case 'smods-header':
+            data.id = meta.obj.id
+            data.version = meta.obj.version
+            break
+        case 'thunderstore':
+            data.id = meta.obj.name
+            data.version = meta.obj.version_number
+            break
     }
+    //data.meta = meta.obj
 
     return data
 }
@@ -165,17 +171,19 @@ async function main() {
     if (!fsp.stat('bmi').catch(() => {}))
         await cp_exec_prm('git clone https://github.com/skyline69/balatro-mod-index bmi')
 
+    process.chdir('bmi')
     await cp_exec_prm('git pull')
+    process.chdir('..')
 
     const items = await fsp.readdir('bmi/mods')
-
-    const metaResolves = await Promise.allSettled(items.map(handleItem))
     const metas = []
-    for (const res of metaResolves) {
-        if (res.status == 'rejected')
-            console.warn(res.reason)
-        else
-            metas.push(res.value)
+    for (const item of items) {
+        try {
+            metas.push(await handleItem(item))
+        } catch(e) {
+            console.error(item, 'error:', e)
+        }
+        console.log()
     }
 
     const str = JSON.stringify(metas, null)

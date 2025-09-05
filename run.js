@@ -18,18 +18,19 @@ async function main() {
     await cp_exec_prm('git pull')
 
     const items = await fsp.readdir('mods')
-    const metas = items.map(v => fsp.readFile(`mods/${v}/meta.json`))
+    const metas = items.map(v => [v, fsp.readFile(`mods/${v}/meta.json`)])
 
     const fout = fs.createWriteStream('../out.json.gz')
     const out = zlib.createGzip()
     out.pipe(fout)
 
-    out.write('[')
-    for (const [i, content] of metas.entries()) {
+    out.write('{')
+    for (const [i, [name, content]] of metas.entries()) {
         if (i != 0) out.write(',')
+        out.write(JSON.stringify(name) + ":")
         out.write(await content)
     }
-    out.write(']')
+    out.write('}')
 
     await new Promise(res => out.end(res))
 

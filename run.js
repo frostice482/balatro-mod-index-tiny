@@ -38,5 +38,6 @@ async function main() {
 
     await cp_exec_prm('git add out.json.gz')
     await cp_exec_prm(`git commit -m "auto @ ${t.toUTCString()}"`)
+    await cp_exec_prm(`git push origin master`)
 }
 main()

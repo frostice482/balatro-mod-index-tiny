@@ -3,6 +3,7 @@ const cp = require('child_process')
 const fsp = require('fs/promises')
 const util = require('util')
 const zlib = require('zlib')
+const { parse } = require('path')
 
 const cp_exec_prm = util.promisify(cp.exec)
 const gzip = util.promisify(zlib.gzip)
@@ -17,6 +18,13 @@ const metaFieldTypes = {
     version: "string"
 }
 
+const smodsFieldIncludes = {
+    id: "id",
+    version: "version",
+    deps: "dependencies",
+    conflicts: "conflicts",
+}
+
 const tsManifestFieldTypes = {
     name: "string",
     version_number: "string",
@@ -25,12 +33,35 @@ const tsManifestFieldTypes = {
     dependencies: "object"
 }
 
+const tsFieldIncludes = {
+    id: "name",
+    version: "version_number",
+    deps: "dependencies",
+}
+
 const headerFields = {
-    MOD_ID: "id",
-    //MOD_NAME: "name",
-    //MOD_DESCRIPTION: "description",
-    //PREFIX: "prefix",
-    VERSION: "version",
+    MOD_ID: {
+        name: "id"
+    },
+    VERSION: {
+        name: "version"
+    },
+    DEPS: {
+        name: "dependencies",
+        array: true,
+    },
+    DEPENDENCIES: {
+        name: "dependencies",
+        array: true,
+    },
+    DEPENDS: {
+        name: "dependencies",
+        array: true,
+    },
+    CONFLICTS: {
+        name: "conflicts",
+        array: true,
+    }
 }
 
 const delprops = [
@@ -50,6 +81,31 @@ function fieldTypeSatisfy(obj, fieldTypes) {
     return true
 }
 
+function parseSmodsHeader(data, noPad) {
+    const lines = data.split(/\r?\n/)
+    const lineitr = lines.values()
+
+    if (!noPad) {
+        const [line] = lineitr
+        if (line != '--- STEAMODDED HEADER') return
+    }
+
+    const obj = {}
+    for (const line of lineitr) {
+        const m = line.match(/^--- *(\w+) *: *(.*)/)
+        if (!m) break
+
+        let [_, prop, val] = m
+        const info = headerFields[prop]
+        if (!info) continue
+
+        if (info.array) val = val.slice(1, -1).split(',').map(v => v.trim())
+        obj[info.name] = val
+    }
+
+    return obj
+}
+
 async function handleJsonInfo(entry) {
     const isJson = entry.name.endsWith(".json")
     const isLua = entry.name.endsWith(".lua")
@@ -65,37 +121,22 @@ async function handleJsonInfo(entry) {
 
     let obj, fmt
 
-    console.log('parsing', entry.name)
-
     if (isJson) {
         const data = await res.json()
         if (fieldTypeSatisfy(data, metaFieldTypes)) {
             obj = data
             fmt = 'smods'
-            //for (const prop of metaDelProps) delete obj[prop]
         }
         else if (entry.name == "manifest.json" && fieldTypeSatisfy(data, tsManifestFieldTypes)) {
             obj = data
             fmt = 'thunderstore'
-            //for (const prop of tsDelProps) delete obj[prop]
         }
     }
     else if (isLua) {
         const data = await res.text()
-        const lines = data.split(/\r?\n/)
-        if (lines[0] != '--- STEAMODDED HEADER') return
-
-        obj = {}
+        obj = parseSmodsHeader(data)
         fmt = 'smods-header'
-        const lineitr = lines.values()
-        lineitr.next()
-        for (const line of lineitr) {
-            const m = line.match(/^--- *(\w+) *: *(.*)/)
-            if (!m) break
-            const [_, prop, val] = m
-            if (headerFields[prop])
-                obj[headerFields[prop]] = val
-        }
+        if (!obj) return
     }
 
     return {
@@ -132,8 +173,6 @@ async function handleItem(name) {
     const data = JSON.parse(content)
     data.pathname = name
 
-    console.log(name, data.repo)
-
     for (const prop of delprops) delete data[prop]
 
     const m = data.repo.match(/^https:\/\/([\w.]+)\/([\w.-]+\/[\w.-]+)/)
@@ -142,18 +181,9 @@ async function handleItem(name) {
     const meta = await getJsonInfo(m[1], m[2])
     if (!meta) throw Error('Could not determine meta info')
 
-    switch (meta.format) {
-        case 'smods':
-        case 'smods-header':
-            data.id = meta.obj.id
-            data.version = meta.obj.version
-            break
-        case 'thunderstore':
-            data.id = meta.obj.name
-            data.version = meta.obj.version_number
-            break
-    }
-    //data.meta = meta.obj
+    const inclFields = meta.format == 'thunderstore' ? tsFieldIncludes : smodsFieldIncludes
+    for (const [k, v] of Object.entries(inclFields)) data[k] = meta.obj[v]
+    data.metafmt = meta.format
 
     return data
 }
@@ -178,17 +208,16 @@ async function main() {
     process.chdir('..')
 
     const items = await fsp.readdir('bmi/mods')
-    const metas = []
-    for (const item of items) {
+    const results = await Promise.all(items.map(async item => {
         try {
             const data = await handleItem(item)
-            metas.push(data)
-            console.log(data.id)
+            console.log([item.padEnd(40), data.id.padEnd(30), data.metafmt.padEnd(15), data.version].join(' '))
+            return data
         } catch(e) {
-            console.error(item, 'error:', e)
+            console.error(item, 'failed:', e)
         }
-        console.log()
-    }
+    }))
+    const metas = results.filter(v => v)
 
     const str = JSON.stringify(metas, null)
 

@@ -182,6 +182,8 @@ async function handleItem(name) {
     for (const [k, v] of Object.entries(inclFields)) data[k] = meta.obj[v]
     data.metafmt = meta.format
 
+    if (!meta.id) throw Error('Could not determine ID')
+
     return data
 }
 

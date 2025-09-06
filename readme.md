@@ -11,10 +11,10 @@ To overcome this, there is a script to pull the additional mod info (id, version
 The used script automatically checks for files in your given `repo`.
 Your root files in given `repo` must contain any of the following:
 
-- a valid `json` file, fulfilling [Thunderstore metadata](https://thunderstore.io/package/create/docs/)
+- a valid `manifest.json` file, fulfilling [Thunderstore metadata](https://thunderstore.io/package/create/docs/)
 
 - a valid `json` file, fulfilling [Steamodded metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata).
 
     Note that trailing commas are not allowed.
 
-- a valid `lua` file, fulfilling [Steamodded header metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata)
+- a valid `lua` file, fulfilling [Steamodded header metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata#file-header-outdated)

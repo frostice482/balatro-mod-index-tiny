@@ -87,12 +87,14 @@ async function handleJsonInfo(entry) {
 
         obj = {}
         fmt = 'smods-header'
-        for (const line of lines) {
-            const m = line.match(/^--- *(\w+) *:(.*)/)
+        const lineitr = lines.values()
+        lineitr.next()
+        for (const line of lineitr) {
+            const m = line.match(/^--- *(\w+) *: *(.*)/)
             if (!m) break
             const [_, prop, val] = m
-            if (!headerFields[prop])
-            obj[headerFields[prop]] = val
+            if (headerFields[prop])
+                obj[headerFields[prop]] = val
         }
     }
 
@@ -179,7 +181,9 @@ async function main() {
     const metas = []
     for (const item of items) {
         try {
-            metas.push(await handleItem(item))
+            const data = await handleItem(item)
+            metas.push(data)
+            console.log(data.id)
         } catch(e) {
             console.error(item, 'error:', e)
         }

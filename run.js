@@ -1,9 +1,7 @@
-const http = require('http')
 const cp = require('child_process')
 const fsp = require('fs/promises')
 const util = require('util')
 const zlib = require('zlib')
-const { parse } = require('path')
 
 const cp_exec_prm = util.promisify(cp.exec)
 const gzip = util.promisify(zlib.gzip)
@@ -14,8 +12,7 @@ const metaFieldTypes = {
     name: "string",
     description: "string",
     prefix: "string",
-    author: "object",
-    version: "string"
+    author: "object"
 }
 
 const smodsFieldIncludes = {

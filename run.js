@@ -17,9 +17,10 @@ const metaFieldTypes = {
 
 const smodsFieldIncludes = {
     id: "id",
-    version: "version",
-    deps: "dependencies",
-    conflicts: "conflicts",
+    //version: "version",
+    //deps: "dependencies",
+    //conflicts: "conflicts",
+    provides: "provides"
 }
 
 const tsManifestFieldTypes = {
@@ -32,8 +33,8 @@ const tsManifestFieldTypes = {
 
 const tsFieldIncludes = {
     id: "name",
-    version: "version_number",
-    deps: "dependencies",
+    //version: "version_number",
+    //deps: "dependencies",
 }
 
 const headerFields = {
@@ -68,7 +69,7 @@ const delprops = [
     'fixed-release-tag-updates',
     'last-updated',
     'foldername',
-    'version'
+    //'version'
 ]
 
 function fieldTypeSatisfy(obj, fieldTypes) {

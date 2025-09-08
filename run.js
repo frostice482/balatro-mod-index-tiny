@@ -20,7 +20,8 @@ const smodsFieldIncludes = {
     //version: "version",
     //deps: "dependencies",
     //conflicts: "conflicts",
-    provides: "provides"
+    provides: "provides",
+    description: "description",
 }
 
 const tsManifestFieldTypes = {
@@ -33,6 +34,7 @@ const tsManifestFieldTypes = {
 
 const tsFieldIncludes = {
     id: "name",
+    description: "description",
     //version: "version_number",
     //deps: "dependencies",
 }
@@ -41,9 +43,13 @@ const headerFields = {
     MOD_ID: {
         name: "id"
     },
+    MOD_DESCRIPTION: {
+        name: "description"
+    },
     VERSION: {
         name: "version"
     },
+    /*
     DEPS: {
         name: "dependencies",
         array: true,
@@ -60,6 +66,7 @@ const headerFields = {
         name: "conflicts",
         array: true,
     }
+    */
 }
 
 const delprops = [

@@ -79,6 +79,12 @@ const delprops = [
     //'version'
 ]
 
+const renameProps = {
+    title: 'name',
+    author: 'owner',
+    downloadURL: 'download_url'
+}
+
 function fieldTypeSatisfy(obj, fieldTypes) {
     for (const [k,v] of Object.entries(fieldTypes)) {
         if (typeof(obj[k]) != v) return false
@@ -178,7 +184,13 @@ async function handleItem(name) {
     const data = JSON.parse(content)
     data.pathname = name
 
-    for (const prop of delprops) delete data[prop]
+    for (const prop of delprops) {
+        delete data[prop]
+    }
+    for (const [k, v] of Object.entries(renameProps)) {
+        data[v] = data[k]
+        delete data[k]
+    }
 
     const m = data.repo.match(/^https:\/\/([\w.]+)\/([\w.-]+\/[\w.-]+)/)
     if (!m) throw Error('Could not determine repo host from ' + data.repo)

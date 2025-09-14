@@ -1,0 +1,31 @@
+on:
+  workflow_dispatch:
+    inputs:
+      TOKEN:
+        required: true
+        type: string
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  run-node:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: nodejs setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: script
+        env:
+          GITHUB_TOKEN: ${{ github.event.inputs.TOKEN || secrets.TOKEN }}
+        run: |
+          node run
+
+      - name: push
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ github.event.inputs.TOKEN || secrets.TOKEN }}

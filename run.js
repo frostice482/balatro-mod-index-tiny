@@ -207,16 +207,9 @@ async function handleItem(name) {
     return data
 }
 
-async function initEnv() {
-    const envstr = await fsp.readFile('.env', 'utf-8')
-    for (const entry of envstr.split('\n')) {
-        const [name] = entry.match(/^[\w_]+/)
-        process.env[name] = entry.slice(name.length + 1)
-    }
-}
-
 async function main() {
-    await initEnv()
+    if (!process.env.GITHUB_TOKEN) throw Error('missing github token')
+
     const t = new Date()
 
     if (!fsp.stat('bmi').catch(() => {}))
@@ -245,6 +238,5 @@ async function main() {
 
     await cp_exec_prm('git add out.json.gz')
     await cp_exec_prm(`git commit -m "auto @ ${t.toUTCString()}"`)
-    await cp_exec_prm(`git push origin master`)
 }
 main()

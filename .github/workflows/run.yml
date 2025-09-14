@@ -25,12 +25,12 @@ jobs:
             bmi-
 
       - name: Clone BMI
-        if: steps.cache-bmi.outputs.cache-hit != 'true'
+        if: steps.cache-bmi.outputs.cache-hit == ''
         run: |
           git clone https://github.com/skyline69/balatro-mod-index.git bmi
 
       - name: Pull BMI
-        if: steps.cache-bmi.outputs.cache-hit == 'true'
+        if: steps.cache-bmi.outputs.cache-hit != ''
         run: |
           cd bmi
           git restore .

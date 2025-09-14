@@ -209,15 +209,7 @@ async function handleItem(name) {
 
 async function main() {
     if (!process.env.GITHUB_TOKEN) throw Error('missing github token')
-
     const t = new Date()
-
-    if (!fsp.stat('bmi').catch(() => {}))
-        await cp_exec_prm('git clone https://github.com/skyline69/balatro-mod-index bmi')
-
-    process.chdir('bmi')
-    await cp_exec_prm('git pull')
-    process.chdir('..')
 
     const items = await fsp.readdir('bmi/mods')
     const results = await Promise.all(items.map(async item => {

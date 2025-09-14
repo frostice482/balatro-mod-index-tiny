@@ -3,7 +3,7 @@ on:
     inputs:
       TOKEN:
         required: true
-        type: string
+        type: environment
   schedule:
     - cron: '0 */6 * * *'
 
@@ -11,21 +11,49 @@ jobs:
   run-node:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: nodejs setup
+      - name: Restore BMI cache
+        id: cache-bmi
+        uses: actions/cache@v4
+        with:
+          path: bmi
+          key: bmi-${{ github.ref }}-${{ github.run_id }}
+          restore-keys: |
+            bmi-
+
+      - name: Clone BMI
+        if: steps.cache-bmi.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/skyline69/balatro-mod-index.git bmi
+
+      - name: Pull BMI
+        if: steps.cache-bmi.outputs.cache-hit == 'true'
+        run: |
+          cd bmi
+          git restore .
+          git pull origin main
+          cd ..
+
+      - name: Clear BMI
+        run: |
+          cd bmi
+          rm mods/**/*.jpg
+          cd ..
+
+      - name: Nodejs setup
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: script
+      - name: Run
         env:
-          GITHUB_TOKEN: ${{ github.event.inputs.TOKEN || secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ inputs.TOKEN || secrets.TOKEN }}
         run: |
           node run
 
-      - name: push
+      - name: Push changes
         uses: ad-m/github-push-action@v0.8.0
         with:
-          github_token: ${{ github.event.inputs.TOKEN || secrets.TOKEN }}
+          github_token: ${{ inputs.TOKEN || secrets.TOKEN }}

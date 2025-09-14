@@ -1,9 +1,5 @@
 on:
   workflow_dispatch:
-    inputs:
-      TOKEN:
-        required: true
-        type: environment
   schedule:
     - cron: '0 */6 * * *'
 
@@ -49,11 +45,11 @@ jobs:
 
       - name: Run
         env:
-          GITHUB_TOKEN: ${{ inputs.TOKEN || secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         run: |
           node run
 
       - name: Push changes
         uses: ad-m/github-push-action@v0.8.0
         with:
-          github_token: ${{ inputs.TOKEN || secrets.TOKEN }}
+          github_token: ${{ secrets.TOKEN }}

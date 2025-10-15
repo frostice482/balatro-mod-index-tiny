@@ -3,6 +3,27 @@ The index repo contains lots of `thumbnail.jpg` files, which fills up the repo s
 This repo aims to reduce the repo size by not including the `thumbnail.jpg`,
 and reducing API calls by bundling mod metadata to one file.
 
+## Format
+
+`out.json` is an array of mods.
+
+```ts
+interface Mod {
+    name: string
+    repo: string
+    owner: string
+    categories: string[]
+    version: string
+    download_url: string
+    // Added fields
+    id: string
+    pathname: string // e.g. `frostice482@imm`
+    provides?: string[]
+    description: string
+}
+type Out = Mod[]
+```
+
 ## Why is my mod not included?
 
 The `balatro-mod-index` repo does not provide the mod ID.
@@ -18,21 +39,3 @@ Your root files in given `repo` must contain any of the following:
     Note that trailing commas are not allowed.
 
 - a valid `lua` file, fulfilling [Steamodded header metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata#file-header-outdated)
-
-## Format
-
-```ts
-interface Format {
-    name: string
-    repo: string
-    owner: string
-    categories: string[]
-    version: string
-    download_url: string
-    // Added fields
-    id: string
-    pathname: string // e.g. `frostice482@imm`
-    provides: string[]
-    description: string
-}
-```

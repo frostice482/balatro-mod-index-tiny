@@ -18,3 +18,21 @@ Your root files in given `repo` must contain any of the following:
     Note that trailing commas are not allowed.
 
 - a valid `lua` file, fulfilling [Steamodded header metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata#file-header-outdated)
+
+## Format
+
+```ts
+interface Format {
+    name: string
+    repo: string
+    owner: string
+    categories: string[]
+    version: string
+    download_url: string
+    // Added fields
+    id: string
+    pathname: string // e.g. `frostice482@imm`
+    provides: string[]
+    description: string
+}
+```

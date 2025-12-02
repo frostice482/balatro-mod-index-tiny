@@ -21,7 +21,6 @@ jobs:
         with:
           path: bmi
           key: bmi-${{ github.ref }}-${{ github.run_id }}
-          retention-days: 1
           restore-keys: |
             bmi-
 

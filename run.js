@@ -2,6 +2,7 @@ const cp = require('child_process')
 const fsp = require('fs/promises')
 const util = require('util')
 const zlib = require('zlib')
+const J5 = require('json5')
 
 const cp_exec_prm = util.promisify(cp.exec)
 const gzip = util.promisify(zlib.gzip)
@@ -133,7 +134,8 @@ async function handleJsonInfo(entry) {
     let obj, fmt
 
     if (isJson) {
-        const data = await res.json()
+        const raw = await res.text()
+        const data = J5.parse(raw)
         if (fieldTypeSatisfy(data, metaFieldTypes)) {
             obj = data
             fmt = 'smods'
@@ -212,7 +214,7 @@ async function main() {
         const content = await fsp.readFile(`bmi/mods/${item}/meta.json`)
         let data
         try {
-            data = JSON.parse(content)
+            data = J5.parse(content)
             data.pathname = item
 
             const res = await handleItem(data)

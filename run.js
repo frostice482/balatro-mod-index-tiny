@@ -215,7 +215,7 @@ async function main() {
             data = JSON.parse(content)
             data.pathname = item
 
-            const res = await handleItem(item)
+            const res = await handleItem(data)
             console.log([item.padEnd(40), res.id.padEnd(30), res.metafmt.padEnd(15), res.version].join(' '))
             return res
         } catch(e) {

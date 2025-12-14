@@ -193,8 +193,12 @@ async function handleItem(data) {
     const m = data.repo.match(/^https:\/\/([\w.]+)\/([\w.-]+\/[\w.-]+)/)
     if (!m) throw Error('Could not determine repo host from ' + data.repo)
 
-    const meta = await getJsonInfo(m[1], m[2])
-    if (!meta) throw Error('Could not determine meta info')
+    const meta = await getJsonInfo(m[1], m[2]) ?? {
+        format: 'smods',
+        id: data.pathname,
+        description: ''
+    }
+    //if (!meta) throw Error('Could not determine meta info')
 
     const inclFields = meta.format == 'thunderstore' ? tsFieldIncludes : smodsFieldIncludes
     for (const [k, v] of Object.entries(inclFields)) data[k] = meta.obj[v]
@@ -222,9 +226,9 @@ async function main() {
             return res
         } catch(e) {
             if (data) {
-                console.error(`${item} failed: ${e}`)
-            } else {
                 console.error(`${item} (${data.repo}) failed: ${e}`)
+            } else {
+                console.error(`${item} failed: ${e}`)
             }
         }
     }))

@@ -179,11 +179,7 @@ async function getJsonInfo(host, repo) {
     }
 }
 
-async function handleItem(name) {
-    const content = await fsp.readFile(`bmi/mods/${name}/meta.json`)
-    const data = JSON.parse(content)
-    data.pathname = name
-
+async function handleItem(data) {
     for (const prop of delprops) {
         delete data[prop]
     }
@@ -213,12 +209,21 @@ async function main() {
 
     const items = await fsp.readdir('bmi/mods')
     const results = await Promise.all(items.map(async item => {
+        const content = await fsp.readFile(`bmi/mods/${item}/meta.json`)
+        let data
         try {
-            const data = await handleItem(item)
-            console.log([item.padEnd(40), data.id.padEnd(30), data.metafmt.padEnd(15), data.version].join(' '))
-            return data
+            data = JSON.parse(content)
+            data.pathname = item
+
+            const res = await handleItem(item)
+            console.log([item.padEnd(40), res.id.padEnd(30), res.metafmt.padEnd(15), res.version].join(' '))
+            return res
         } catch(e) {
-            console.error(item, 'failed:', e)
+            if (data) {
+                console.error(`${item} failed: ${e}`)
+            } else {
+                console.error(`${item} (${data.repo}) failed: ${e}`)
+            }
         }
     }))
     const metas = results.filter(v => v)

@@ -149,8 +149,9 @@ async function handleJsonInfo(entry) {
         const data = await res.text()
         obj = parseSmodsHeader(data)
         fmt = 'smods-header'
-        if (!obj) return
     }
+
+    if (!obj) return
 
     return {
         obj: obj,
@@ -195,8 +196,10 @@ async function handleItem(data) {
 
     const meta = await getJsonInfo(m[1], m[2]) ?? {
         format: 'smods',
-        id: data.pathname,
-        description: ''
+        obj: {
+            id: data.pathname,
+            description: ''
+        }
     }
     //if (!meta) throw Error('Could not determine meta info')
 

@@ -16,26 +16,10 @@ interface Mod {
     version: string
     download_url: string
     // Added fields
-    id: string
+    id: string // This will be equal to pathname incase the metadata cannot be extracted
     pathname: string // e.g. `frostice482@imm`
     provides?: string[]
-    description: string
+    description: string // This will be empty incase the metadata cannot be extracted
 }
 type Out = Mod[]
 ```
-
-## Why is my mod not included?
-
-The `balatro-mod-index` repo does not provide the mod ID.
-To overcome this, there is a script to pull the additional mod info (id, version, dependencies, conflicts).
-
-The used script automatically checks for files in your given `repo`.
-Your root files in given `repo` must contain any of the following:
-
-- a valid `manifest.json` file, fulfilling [Thunderstore metadata](https://thunderstore.io/package/create/docs/)
-
-- a valid `json` file, fulfilling [Steamodded metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata).
-
-    Note that trailing commas are not allowed.
-
-- a valid `lua` file, fulfilling [Steamodded header metadata](https://github.com/Steamodded/smods/wiki/Mod-Metadata#file-header-outdated)

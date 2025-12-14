@@ -27,8 +27,6 @@ jobs:
         with:
           path: bmi
           key: bmi
-          restore-keys: |
-            bmi-
 
       - name: Clone BMI
         if: steps.cache-bmi.outputs.cache-hit == ''
@@ -53,6 +51,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install
 
       - name: Run
         env:

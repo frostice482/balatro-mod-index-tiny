@@ -220,7 +220,7 @@ async function main() {
     const results = await Promise.all(items.map(async item => {
         const file = `bmi/mods/${item}/meta.json`
         const stat = await fsp.stat(file)
-        if (!stat.isDirectory()) return
+        if (!stat.isFile()) return
         const content = await fsp.readFile(file)
         let data
         try {

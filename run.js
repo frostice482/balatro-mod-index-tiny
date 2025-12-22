@@ -218,15 +218,11 @@ async function main() {
 
     const items = await fsp.readdir('bmi/mods')
     const results = await Promise.all(items.map(async item => {
-        const file = `bmi/mods/${item}/meta.json`
-        const stat = await fsp.stat(file)
-        if (!stat.isFile()) return
-        const content = await fsp.readFile(file)
+        const content = await fsp.readFile(`bmi/mods/${item}/meta.json`)
         let data
         try {
             data = J5.parse(content)
             data.pathname = item
-            data.modtime = stat.mtimeMs
 
             const res = await handleItem(data)
             console.log([item.padEnd(40), res.id.padEnd(30), res.metafmt.padEnd(15), res.version].join(' '))

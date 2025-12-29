@@ -23,6 +23,8 @@ const smodsFieldIncludes = {
     //conflicts: "conflicts",
     provides: "provides",
     description: "description",
+    badge_colour: "badge_colour",
+    badge_text_colour: "badge_text_colour"
 }
 
 const tsManifestFieldTypes = {

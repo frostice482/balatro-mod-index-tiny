@@ -4,6 +4,8 @@ const util = require('util')
 const zlib = require('zlib')
 const J5 = require('json5')
 
+const configFileName = 'bmi-tiny-meta.json'
+
 const cp_exec_prm = util.promisify(cp.exec)
 const gzip = util.promisify(zlib.gzip)
 process.chdir(__dirname)
@@ -161,8 +163,11 @@ async function handleJsonInfo(entry) {
     }
 }
 
-async function getJsonInfo(host, repo) {
+async function getJsonInfo(host, repo, pathname) {
     if (repo.endsWith('.git')) repo = repo.slice(0, -4)
+
+    const meta = await getConfigJsonInfo(host, repo, pathname)
+    if (meta) return meta
 
     let res
     if (host == "github.com") {
@@ -179,8 +184,49 @@ async function getJsonInfo(host, repo) {
 
     const list = await res.json()
     for (const entry of list) {
+        if (entry.name == configFileName) continue
         const data = await handleJsonInfo(entry)
         if (data) return data
+    }
+}
+
+async function getConfigJsonInfo(host, repo, pathname) {
+    const config = await fetchRepoBmitMeta(host, repo)
+    const conf = config?.mods?.[pathname]
+    if (!conf) return
+
+    const res = await fetchRepoFile(host, repo, conf.manifest)
+    if (res.status != 200) return
+
+    const data = J5.parse(await res.text())
+    const isSmods = fieldTypeSatisfy(data, metaFieldTypes)
+    const isTs = conf.manifest.endsWith("manifest.json") && fieldTypeSatisfy(data, tsManifestFieldTypes)
+    if (!(isSmods || isTs)) return
+
+    return {
+        obj: data,
+        format: isSmods ? 'smods' : 'thunderstore',
+        release_prefix: conf.release_prefix
+    }
+}
+
+async function fetchRepoBmitMeta(host, repo) {
+    const res = await fetchRepoFile(host, repo, configFileName)
+    if (res.status != 200) return
+    const data = J5.parse(await res.text())
+    if (!fieldTypeSatisfy(data, { mods: "object" })) throw Error(`Invalid config file ${configFileName}`)
+    return data
+}
+
+async function fetchRepoFile(host, repo, path) {
+    if (host == "github.com") {
+        return fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+            headers: {
+                Authorization: 'Bearer ' + process.env.GITHUB_TOKEN
+            }
+        })
+    } else if (host == "codeberg.org") {
+        return fetch(`https://${host}/api/v1/repos/${repo}/contents/${path}`)
     }
 }
 
@@ -196,7 +242,7 @@ async function handleItem(data) {
     const m = data.repo.match(/^https:\/\/([\w.]+)\/([\w.-]+\/[\w.-]+)/)
     if (!m) throw Error('Could not determine repo host from ' + data.repo)
 
-    const meta = await getJsonInfo(m[1], m[2]) ?? {
+    const meta = await getJsonInfo(m[1], m[2], data.pathname) ?? {
         format: 'smods',
         obj: {
             id: data.pathname,
@@ -208,6 +254,8 @@ async function handleItem(data) {
     const inclFields = meta.format == 'thunderstore' ? tsFieldIncludes : smodsFieldIncludes
     for (const [k, v] of Object.entries(inclFields)) data[k] = meta.obj[v]
     data.metafmt = meta.format
+
+    if (meta.release_prefix) data.release_prefix = meta.release_prefix
 
     if (!data.id) throw Error('Could not determine ID')
 

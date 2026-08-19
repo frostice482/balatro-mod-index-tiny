@@ -138,8 +138,7 @@ async function handleJsonInfo(entry) {
     let obj, fmt
 
     if (isJson) {
-        const raw = await res.text()
-        const data = J5.parse(raw)
+        const data = J5.parse(await res.text())
         if (fieldTypeSatisfy(data, metaFieldTypes)) {
             obj = data
             fmt = 'smods'
@@ -150,8 +149,7 @@ async function handleJsonInfo(entry) {
         }
     }
     else if (isLua) {
-        const data = await res.text()
-        obj = parseSmodsHeader(data)
+        obj = parseSmodsHeader(await res.text())
         fmt = 'smods-header'
     }
 
@@ -163,62 +161,24 @@ async function handleJsonInfo(entry) {
     }
 }
 
-async function getJsonInfo(host, repo, pathname) {
-    if (repo.endsWith('.git')) repo = repo.slice(0, -4)
-
-    const meta = await getConfigJsonInfo(host, repo, pathname)
-    if (meta) return meta
-
-    let res
-    if (host == "github.com") {
-        res = await fetch(`https://api.github.com/repos/${repo}/contents`, {
-            headers: {
-                Authorization: 'Bearer ' + process.env.GITHUB_TOKEN
-            }
-        })
-    } else if (host == "codeberg.org") {
-        res = await fetch(`https://${host}/api/v1/repos/${repo}/contents`)
-    }
-
-    if (res.status != 200) throw Error(`${res.url} HTTP ${res.status}`)
-
-    const list = await res.json()
-    for (const entry of list) {
-        if (entry.name == configFileName) continue
-        const data = await handleJsonInfo(entry)
-        if (data) return data
-    }
-}
-
 async function getConfigJsonInfo(host, repo, pathname) {
-    const config = await fetchRepoBmitMeta(host, repo)
-    const conf = config?.mods?.[pathname]
-    if (!conf) return
+    if (host != 'github.com') return
 
-    const res = await fetchRepoFile(host, repo, conf.manifest)
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${configFileName}`)
     if (res.status != 200) return
 
     const data = J5.parse(await res.text())
-    const isSmods = fieldTypeSatisfy(data, metaFieldTypes)
-    const isTs = conf.manifest.endsWith("manifest.json") && fieldTypeSatisfy(data, tsManifestFieldTypes)
-    if (!(isSmods || isTs)) return
+    if (!fieldTypeSatisfy(data, { mods: "object" })) return
+    const pathData = data?.mods?.[pathname]
+    if (!pathData) return
 
-    return {
-        obj: data,
-        format: isSmods ? 'smods' : 'thunderstore',
-        release_prefix: conf.release_prefix
-    }
+    const processed = await handleJsonInfo(pathData.manifest)
+    if (!processed) return
+    processed.release_prefix = pathData.release_prefix
+    return processed
 }
 
-async function fetchRepoBmitMeta(host, repo) {
-    const res = await fetchRepoFile(host, repo, configFileName)
-    if (res.status != 200) return
-    const data = J5.parse(await res.text())
-    if (!fieldTypeSatisfy(data, { mods: "object" })) throw Error(`Invalid config file ${configFileName}`)
-    return data
-}
-
-async function fetchRepoFile(host, repo, path) {
+async function fetchRepoFileList(host, repo, path) {
     if (host == "github.com") {
         return fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
             headers: {
@@ -227,6 +187,23 @@ async function fetchRepoFile(host, repo, path) {
         })
     } else if (host == "codeberg.org") {
         return fetch(`https://${host}/api/v1/repos/${repo}/contents/${path}`)
+    }
+}
+
+async function getJsonInfo(host, repo, pathname) {
+    if (repo.endsWith('.git')) repo = repo.slice(0, -4)
+
+    const meta = await getConfigJsonInfo(host, repo, pathname)
+    if (meta) return meta
+
+    let res = await fetchRepoFileList(host, repo)
+    if (res.status != 200) throw Error(`${res.url} HTTP ${res.status}`)
+
+    const list = await res.json()
+    for (const entry of list) {
+        if (entry.name == configFileName) continue
+        const data = await handleJsonInfo(entry)
+        if (data) return data
     }
 }
 

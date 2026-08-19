@@ -3,6 +3,7 @@ const fsp = require('fs/promises')
 const util = require('util')
 const zlib = require('zlib')
 const J5 = require('json5')
+const path = require('path')
 
 const configFileName = 'bmi-tiny-meta.json'
 
@@ -172,13 +173,17 @@ async function getConfigJsonInfo(host, repo, pathname) {
     const pathData = data?.mods?.[pathname]
     if (!pathData) return
 
-    const processed = await handleJsonInfo(pathData.manifest)
+    const processed = await handleJsonInfo({
+        name: path.basename(pathData.manifest),
+        type: 'file',
+        download_url: `https://raw.githubusercontent.com/${repo}/HEAD/${pathData.manifest}`
+    })
     if (!processed) return
     processed.release_prefix = pathData.release_prefix
     return processed
 }
 
-async function fetchRepoFileList(host, repo, path) {
+async function fetchRepoFileList(host, repo, path = '') {
     if (host == "github.com") {
         return fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
             headers: {

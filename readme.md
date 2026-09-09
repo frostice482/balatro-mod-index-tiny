@@ -15,6 +15,7 @@ interface Mod {
     categories: string[]
     version: string
     download_url: string
+    foldername?: string
 
     // Added fields
     id: string // This will be equal to pathname incase the metadata cannot be extracted

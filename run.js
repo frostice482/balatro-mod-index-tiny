@@ -81,7 +81,6 @@ const delprops = [
     'automatic-version-check',
     'fixed-release-tag-updates',
     'last-updated',
-    'foldername',
     //'version'
 ]
 
